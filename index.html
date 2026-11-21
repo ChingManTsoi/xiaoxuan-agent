@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小选 · 电子购物 Agent 交互原型</title>
+<style>
+  :root{
+    --paper:#f4f2ec;
+    --card:#ffffff;
+    --ink:#16181c;
+    --muted:#6d7078;
+    --line:#e3e0d7;
+    --line-soft:#eeece5;
+    --accent:#0f5f4c;
+    --accent-soft:#e6f0eb;
+    --amber:#9a5b00;
+    --danger:#a33a32;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:26px 24px 48px;
+  }
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .num{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;}
+
+  /* ---------- page header ---------- */
+  .page-head{
+    max-width:1040px;margin:0 auto 22px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+  }
+  .page-head h1{
+    margin:0 0 4px;font-size:26px;letter-spacing:-.02em;font-weight:650;
+  }
+  .page-head h1 span{color:var(--accent);}
+  .page-head p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.6;max-width:560px;}
+  .tag{
+    flex:none;font-size:11px;color:var(--accent);background:var(--accent-soft);
+    border-radius:999px;padding:5px 11px;letter-spacing:.02em;
+  }
+
+  /* ---------- workspace ---------- */
+  .workspace{
+    max-width:1040px;margin:0 auto;
+    display:grid;grid-template-columns:396px minmax(0,1fr);gap:30px;align-items:start;
+  }
+
+  /* ---------- phone ---------- */
+  .phone{
+    width:396px;height:812px;background:#17191d;border-radius:48px;padding:9px;
+    box-shadow:0 34px 70px -34px rgba(20,22,26,.55),0 2px 0 rgba(255,255,255,.35) inset;
+    position:sticky;top:18px;
+  }
+  .screen{
+    background:#fbfaf6;border-radius:40px;height:100%;overflow:hidden;
+    display:flex;flex-direction:column;position:relative;
+  }
+  .statusbar{
+    height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:0 26px;font-size:11px;font-weight:600;color:#2a2c31;
+  }
+  .statusbar .sig{display:flex;align-items:center;gap:5px;}
+  .statusbar .bars{display:flex;align-items:flex-end;gap:2px;height:9px;}
+  .statusbar .bars i{width:2.5px;background:#2a2c31;border-radius:1px;}
+  .statusbar .bars i:nth-child(1){height:3px}.statusbar .bars i:nth-child(2){height:5px}
+  .statusbar .bars i:nth-child(3){height:7px}.statusbar .bars i:nth-child(4){height:9px}
+
+  .apphead{
+    flex:none;display:flex;align-items:center;gap:11px;padding:6px 16px 11px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .iconbtn{
+    width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    color:#4c4f56;transition:background .15s;
+  }
+  .iconbtn:hover{background:#f0eee7;}
+  .avatar{
+    width:38px;height:38px;border-radius:13px;background:var(--accent);
+    position:relative;flex:none;display:grid;place-items:center;
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .avatar .eyes{display:flex;gap:6px;margin-top:-2px;}
+  .avatar .eyes i{width:4.5px;height:6px;border-radius:3px;background:#fff;}
+  .avatar .mouth{width:8px;height:3px;border-radius:0 0 6px 6px;background:#fff;opacity:.9;margin-top:3px;}
+  .avatar .dot{
+    position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;
+    background:#3ea77f;border:2px solid #fbfaf6;
+  }
+  .who{min-width:0;flex:1;}
+  .who b{font-size:14px;font-weight:650;display:block;letter-spacing:.01em;}
+  .who span{
+    display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;margin-top:1px;
+  }
+
+  .views{flex:1;min-height:0;position:relative;}
+  .view{
+    position:absolute;inset:0;overflow-y:auto;padding:14px 14px 18px;
+    display:none;scrollbar-width:thin;
+  }
+  .view.active{display:block;}
+  .view::-webkit-scrollbar{width:4px;}
+  .view::-webkit-scrollbar-thumb{background:#dcd8cd;border-radius:4px;}
+
+  /* ---------- chat ---------- */
+  .day{align-self:center;text-align:center;font-size:10.5px;color:#9b9a94;margin:2px 0 12px;}
+  .msg{display:flex;margin-bottom:10px;animation:rise .28s ease both;}
+  .msg.agent{justify-content:flex-start;}
+  .msg.user{justify-content:flex-end;}
+  .bubble{
+    max-width:86%;padding:9px 12px;border-radius:16px;font-size:13px;line-height:1.58;
+    background:#efede6;border-top-left-radius:5px;
+  }
+  .msg.user .bubble{background:var(--accent);color:#fff;border-top-left-radius:16px;border-top-right-radius:5px;}
+  .bubble strong{font-weight:650;}
+  .bubble .small{font-size:11px;color:var(--muted);}
+  .msg.user .bubble .small{color:rgba(255,255,255,.75);}
+  @keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+  .chip{
+    font-size:11.5px;border:1px solid #d9d5c9;border-radius:999px;padding:4px 10px;
+    color:#4d4f54;transition:.15s;background:#fbfaf6;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--accent);background:#fff;}
+
+  .cand-card{
+    margin-top:2px;background:#fff;border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;box-shadow:0 6px 18px -14px rgba(0,0,0,.35);
+  }
+  .cand-head{
+    display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+    padding:11px 12px 9px;
+  }
+  .cand-head b{font-size:12.5px;}
+  .cand-head span{font-size:10px;color:var(--muted);}
+  .cand-row{
+    display:grid;grid-template-columns:22px 1fr auto;gap:7px;align-items:center;
+    padding:10px 12px;border-top:1px solid var(--line-soft);width:100%;text-align:left;transition:background .15s;
+  }
+  .cand-row:hover{background:#faf9f4;}
+  .rk{
+    font-family:"SF Mono",ui-monospace,monospace;font-size:11px;color:#9a9890;
+    width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:#f3f1ea;
+  }
+  .cand-row:first-of-type .rk{background:var(--accent);color:#fff;}
+  .cand-main{min-width:0;}
+  .cand-name{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px;}
+  .cand-name em{
+    font-style:normal;font-size:9.5px;font-weight:500;color:var(--accent);
+    background:var(--accent-soft);border-radius:4px;padding:1px 5px;
+  }
+  .cand-sub{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cand-right{text-align:right;}
+  .cand-price{font-size:12.5px;font-weight:600;display:block;}
+  .cand-score{display:block;font-size:10px;color:var(--muted);margin-top:2px;}
+  .cand-foot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line-soft);}
+  .cand-foot button{
+    flex:1;font-size:11.5px;padding:7px 0;border-radius:9px;border:1px solid #d9d5c9;
+    text-align:center;transition:.15s;
+  }
+  .cand-foot button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .cand-foot button:hover{border-color:var(--accent);color:var(--accent);}
+  .cand-foot button.primary:hover{background:#0c4d3e;color:#fff;}
+
+  .explain{
+    margin-top:9px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;
+  }
+  .explain-head{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    padding:9px 11px;font-size:11.5px;color:#3d4046;
+  }
+  .explain-head .caret{transition:transform .2s;color:var(--muted);}
+  .explain.open .explain-head .caret{transform:rotate(180deg);}
+  .explain-body{display:none;padding:0 11px 11px;font-size:11.5px;line-height:1.65;color:#45484e;}
+  .explain.open .explain-body{display:block;}
+  .explain-body b{color:var(--ink);}
+  .explain-body .kv{margin-top:6px;font-size:11px;color:var(--muted);}
+
+  .agent-note{font-size:10.5px;color:#93918a;margin:-4px 0 12px 2px;line-height:1.5;}
+
+  /* ---------- composer ---------- */
+  .composer{
+    flex:none;border-top:1px solid var(--line-soft);padding:9px 12px 8px;background:#fbfaf6;
+  }
+  .composer-inner{
+    display:flex;align-items:center;gap:8px;border:1px solid #dedad0;background:#fff;
+    border-radius:22px;padding:6px 7px 6px 13px;
+  }
+  .composer input{
+    flex:1;border:0;background:none;font-size:12.5px;min-width:0;outline:none;color:var(--ink);
+  }
+  .composer input::placeholder{color:#a3a19a;}
+  .send{
+    width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
+    display:grid;place-items:center;flex:none;
+  }
+  .send:disabled{background:#d9d6cc;}
+
+  .tabbar{
+    flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line-soft);
+    background:#fbfaf6;padding:6px 4px 10px;
+  }
+  .tab{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:9.5px;color:#8d8b84;padding:4px 0;border-radius:10px;
+  }
+  .tab svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  .tab.active{color:var(--accent);}
+
+  /* ---------- compare ---------- */
+  .view-title{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;}
+  .view-title b{font-size:14px;}
+  .view-title span{font-size:10.5px;color:var(--muted);}
+  .view-sub{font-size:10.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+
+  .cmp-head,.cmp-row{
+    display:grid;grid-template-columns:1.5fr .78fr .5fr .5fr .62fr;
+    align-items:center;gap:4px;padding:8px 6px;
+  }
+  .cmp-head{font-size:9.5px;color:#98968f;border-bottom:1px solid var(--line);}
+  .cmp-head span:nth-child(n+3){text-align:center;}
+  .cmp-row{width:100%;border-bottom:1px solid var(--line-soft);text-align:left;transition:background .15s;padding-top:7px;padding-bottom:7px;}
+  .cmp-row:hover{background:#faf9f3;}
+  .cmp-row.sel{background:var(--accent-soft);border-radius:10px;border-bottom-color:transparent;}
+  .cmp-name{font-size:11.5px;font-weight:600;line-height:1.35;}
+  .cmp-name small{display:block;font-weight:400;font-size:9.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cmp-price{font-size:11.5px;}
+  .cmp-val{text-align:center;font-size:11px;color:#4b4e54;}
+  .cmp-total{text-align:center;font-size:11.5px;font-weight:650;color:var(--accent);}
+
+  .cmp-detail{
+    margin-top:12px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;
+  }
+  .cmp-detail h4{margin:0 0 2px;font-size:12px;}
+  .cmp-detail .price{font-size:11px;color:var(--muted);margin-bottom:9px;}
+  .dims{display:grid;grid-template-columns:64px 1fr 30px;gap:7px;align-items:center;font-size:10.5px;margin-bottom:4px;}
+  .cmp-more{width:100%;text-align:center;font-size:10.5px;color:var(--accent);padding:9px 0 2px;}
+  .dims .bar{display:block;height:4px;background:#eeece4;border-radius:4px;overflow:hidden;}
+  .dims .bar i{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .25s;}
+  .dims .v{text-align:right;color:var(--muted);font-family:"SF Mono",ui-monospace,monospace;}
+  .cmp-note{font-size:10.5px;color:var(--muted);line-height:1.55;margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft);}
+
+  .cmp-cta{
+    position:static;margin:14px -14px 0;padding:0 14px;
+  }
+  #view-compare{padding-bottom:20px;}
+  .cmp-source{font-size:9.5px;color:#9b998f;line-height:1.55;margin:10px 2px 0;}
+  .cmp-cta button{
+    width:100%;background:var(--accent);color:#fff;border-radius:12px;padding:11px 0;
+    font-size:12.5px;font-weight:600;
+  }
+
+  /* ---------- watch ---------- */
+  .watch-card{
+    border:1px solid var(--line);background:#fff;border-radius:15px;padding:12px;margin-bottom:10px;
+  }
+  .watch-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .watch-kicker{font-size:9.5px;color:var(--accent);letter-spacing:.04em;margin-bottom:3px;}
+  .watch-title{font-size:12.5px;font-weight:600;}
+  .watch-price{font-size:15px;font-weight:650;margin-top:5px;}
+  .watch-price small{font-size:10px;font-weight:400;color:var(--muted);margin-left:4px;}
+  .watch-card p{margin:5px 0 0;font-size:10.5px;color:var(--muted);line-height:1.55;}
+  .spark{width:100%;height:44px;margin-top:8px;display:block;}
+  .watch-foot{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:10.5px;
+  }
+  .switch{width:32px;height:18px;border-radius:999px;background:#dcd8cd;position:relative;transition:.2s;flex:none;}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;}
+  .switch.on{background:var(--accent);}
+  .switch.on::after{transform:translateX(14px);}
+
+  /* ---------- me ---------- */
+  .me-sec{margin-bottom:18px;}
+  .me-sec h3{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.02em;margin:0 0 8px;}
+  .pref-row{display:grid;grid-template-columns:58px 1fr 34px;gap:8px;align-items:center;font-size:11px;margin-bottom:7px;}
+  .pref-row .bar{display:block;height:5px;background:#eeece4;border-radius:4px;overflow:hidden;}
+  .pref-row .bar i{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .25s;}
+  .pref-row .v{text-align:right;font-size:10px;color:var(--muted);font-family:"SF Mono",ui-monospace,monospace;}
+  .me-note{font-size:10px;color:var(--muted);line-height:1.55;margin-top:6px;}
+  .pillrow{display:flex;flex-wrap:wrap;gap:6px;}
+  .pill{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:4px 9px;background:#fff;color:#4a4d53;}
+  .pill.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .list{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
+  .list-item{display:flex;justify-content:space-between;gap:10px;padding:9px 11px;font-size:11px;border-bottom:1px solid var(--line-soft);}
+  .list-item:last-child{border-bottom:0;}
+  .list-item span{color:var(--muted);}
+
+  /* ---------- approval overlay ---------- */
+  .overlay{
+    position:absolute;inset:0;background:rgba(22,24,28,.42);display:none;
+    align-items:flex-end;z-index:20;padding:0;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    width:100%;background:#fbfaf6;border-radius:22px 22px 0 0;padding:16px 16px 14px;
+    animation:slideUp .26s ease both;max-height:94%;overflow-y:auto;
+  }
+  @keyframes slideUp{from{transform:translateY(22px);opacity:.7}to{transform:none;opacity:1}}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .sheet-head b{font-size:14px;}
+  .x{width:26px;height:26px;border-radius:50%;background:#efede6;display:grid;place-items:center;font-size:14px;color:#6d7078;}
+  .order-item{display:flex;gap:10px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);}
+  .thumb{
+    width:52px;height:52px;border-radius:12px;background:#e9eef0;position:relative;flex:none;overflow:hidden;
+  }
+  .thumb::before{
+    content:"";position:absolute;inset:9px 13px;border-radius:5px;background:#2c3138;
+    box-shadow:0 0 0 1px #454c55 inset;
+  }
+  .thumb::after{
+    content:"";position:absolute;left:18px;top:15px;width:16px;height:10px;border-radius:3px;background:#5a6570;
+  }
+  .order-item .oi-main{min-width:0;flex:1;}
+  .order-item b{font-size:12px;display:block;}
+  .order-item small{font-size:10px;color:var(--muted);display:block;margin-top:3px;line-height:1.4;}
+  .price-lines{padding:11px 0;border-bottom:1px solid var(--line);}
+  .pline{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px;color:#4a4d53;}
+  .pline.total{font-size:14px;font-weight:650;color:var(--ink);margin:9px 0 0;}
+  .pline .neg{color:var(--accent);}
+  .sheet-meta{font-size:10.5px;color:var(--muted);line-height:1.6;padding:10px 0;border-bottom:1px solid var(--line);}
+  .sheet-meta div{display:flex;justify-content:space-between;gap:12px;margin-bottom:4px;}
+  .sheet-meta b{font-weight:500;color:#3f4248;text-align:right;}
+  .pay{display:flex;align-items:center;justify-content:space-between;padding:10px 0 2px;font-size:11px;}
+  .pay .bank{display:flex;align-items:center;gap:7px;}
+  .bankmark{width:26px;height:18px;border-radius:4px;background:#b3261e;color:#fff;font-size:8px;display:grid;place-items:center;font-weight:700;}
+  .sheet-actions{display:flex;gap:9px;margin-top:13px;}
+  .sheet-actions button{flex:1;padding:11px 0;border-radius:11px;font-size:12.5px;font-weight:600;}
+  .deny{background:#efede6;color:#3f4248;}
+  .allow{background:var(--accent);color:#fff;}
+  .approve-note{font-size:9.5px;color:#98968f;text-align:center;margin-top:8px;line-height:1.5;}
+
+  .success{text-align:center;padding:22px 6px 8px;}
+  .check{width:52px;height:52px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;margin:0 auto 12px;}
+  .success h3{margin:0 0 5px;font-size:16px;}
+  .success p{margin:0 auto;font-size:11px;color:var(--muted);line-height:1.6;max-width:260px;}
+  .success .order-no{font-size:10.5px;color:#4a4d53;background:#efede6;border-radius:8px;padding:6px 9px;display:inline-block;margin:11px 0;}
+  .success button{width:100%;background:var(--accent);color:#fff;border-radius:11px;padding:11px 0;font-size:12.5px;font-weight:600;margin-top:8px;}
+
+  /* ---------- side panel ---------- */
+  .panel{
+    background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 20px 16px;
+    box-shadow:0 18px 40px -34px rgba(20,22,26,.4);
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:3px;}
+  .panel-head b{font-size:15px;letter-spacing:-.01em;}
+  .live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px;}
+  .live i{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 1.6s ease infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+  .panel-sub{font-size:11px;color:var(--muted);margin:0 0 14px;line-height:1.55;}
+
+  .need{
+    background:var(--paper);border-radius:10px;padding:10px 11px;font-size:10.5px;
+    color:#4c4f55;line-height:1.65;margin-bottom:14px;
+  }
+  .need b{font-weight:600;color:var(--ink);}
+  .need .constraints{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+  .need .constraints span{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:9.5px;color:#5b5e64;}
+
+  .presets{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:var(--paper);padding:4px;border-radius:10px;margin-bottom:15px;}
+  .preset{font-size:10.5px;padding:6px 0;border-radius:7px;color:#5b5e64;transition:.15s;}
+  .preset:hover{color:var(--ink);}
+  .preset.on{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+  .sec-label{font-size:10px;color:#95938c;letter-spacing:.03em;margin:0 0 8px;}
+
+  .slider-row{display:grid;grid-template-columns:62px 1fr 34px;gap:10px;align-items:center;margin-bottom:9px;}
+  .slider-row label{font-size:11px;color:#45484e;cursor:pointer;}
+  .slider-row output{font-size:10.5px;color:var(--muted);text-align:right;font-family:"SF Mono",ui-monospace,monospace;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:18px;background:none;margin:0;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:4px;background:#e9e6dd;border-radius:4px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);
+    margin-top:-5px;border:3px solid #fff;box-shadow:0 0 0 1px var(--accent);
+  }
+  input[type=range]::-moz-range-track{height:4px;background:#e9e6dd;border-radius:4px;}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);border:3px solid #fff;}
+
+  .formula{
+    margin:14px 0 15px;padding:9px 11px;background:var(--paper);border-radius:9px;
+    font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;color:#3f4248;
+    display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  }
+  .formula span{color:var(--muted);font-size:9.5px;font-family:inherit;}
+
+  .rank-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px;}
+  .rank-head b{font-size:11.5px;}
+  .rank-head span{font-size:10px;color:var(--accent);}
+  .rank-list{list-style:none;margin:0;padding:0;}
+  .rank-item{
+    display:grid;grid-template-columns:20px 1fr auto;gap:9px;align-items:start;
+    padding:9px 6px;border-top:1px solid var(--line-soft);width:100%;text-align:left;border-radius:8px;
+  }
+  .rank-item:hover{background:#faf9f4;}
+  .rank-item .pos{
+    font-family:"SF Mono",ui-monospace,monospace;font-size:10px;color:#9a9890;
+    background:var(--paper);width:19px;height:19px;border-radius:6px;display:grid;place-items:center;margin-top:1px;
+  }
+  .rank-item:first-child .pos{background:var(--accent);color:#fff;}
+  .rank-item .rname{font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:6px;}
+  .rank-item .rname em{font-style:normal;font-size:9px;font-weight:500;color:var(--amber);background:#fbf0df;border-radius:4px;padding:1px 4px;}
+  .rank-item .rmeta{font-size:10px;color:var(--muted);margin-top:2px;}
+  .rank-bar{display:block;height:3px;background:#eeece4;border-radius:3px;margin-top:6px;overflow:hidden;}
+  .rank-bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .3s;}
+  .rank-item .score{font-size:11px;font-weight:650;font-family:"SF Mono",ui-monospace,monospace;color:var(--ink);}
+  .rank-item .delta{display:block;font-size:9px;color:var(--muted);font-weight:400;margin-top:2px;text-align:right;}
+
+  .panel-foot{font-size:9.5px;color:#9b998f;line-height:1.55;margin-top:12px;padding-top:10px;border-top:1px solid var(--line-soft);}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:760px){
+    body{padding:18px 14px 36px;}
+    .workspace{grid-template-columns:1fr;gap:22px;justify-items:center;}
+    .phone{position:static;width:min(396px,100%);height:800px;}
+    .panel{width:100%;max-width:560px;}
+    .page-head{flex-direction:column;align-items:flex-start;gap:8px;}
+  }
+  @media (max-width:420px){
+    .phone{height:760px;border-radius:40px;padding:7px;}
+    .screen{border-radius:33px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div>
+    <h1>小选 <span>· 电子购物 Agent</span></h1>
+    <p>交互骨架参考 Muse：一条主对话、实时状态、确定性审批卡。差异在于右侧这套可解释的个性化权重，用户能拖，排序立刻变。</p>
+  </div>
+  <div class="tag">交互原型 v1 · 示例数据</div>
+</header>
+
+<main class="workspace">
+
+  <!-- ============ phone ============ -->
+  <section class="phone" aria-label="手机原型">
+    <div class="screen">
+      <div class="statusbar">
+        <span class="num">9:41</span>
+        <span class="sig">
+          <span class="bars"><i></i><i></i><i></i><i></i></span>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 3.5C3 1.7 5 1 7 1s4 .7 6 2.5" stroke="#2a2c31" stroke-width="1.2" stroke-linecap="round"/><path d="M3.5 6C4.7 5 5.8 4.6 7 4.6s2.3.4 3.5 1.4" stroke="#2a2c31" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="8.6" r="1" fill="#2a2c31"/></svg>
+          <span style="display:inline-block;width:18px;height:9px;border:1px solid #2a2c31;border-radius:2px;position:relative"><span style="position:absolute;inset:1px;right:4px;background:#2a2c31;border-radius:1px"></span></span>
+        </span>
+      </div>
+
+      <div class="apphead">
+        <button class="iconbtn" aria-label="菜单">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 5h12M3 9h12M3 13h7"/></svg>
+        </button>
+        <div class="avatar" aria-hidden="true">
+          <div><div class="eyes"><i></i><i></i></div><div class="mouth"></div></div>
+          <span class="dot"></span>
+        </div>
+        <div class="who">
+          <b>小选</b>
+          <span id="statusline">正在比价 6 个平台 · 已排除 3 家非授权店</span>
+        </div>
+        <button class="iconbtn" aria-label="更多">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><circle cx="4" cy="9" r="1.3"/><circle cx="9" cy="9" r="1.3"/><circle cx="14" cy="9" r="1.3"/></svg>
+        </button>
+      </div>
+
+      <div class="views">
+
+        <!-- chat -->
+        <div class="view active" id="view-chat" role="tabpanel" aria-label="对话">
+          <div class="msg agent">
+            <div class="bubble">
+              换手机？先确认三件事。
+              <div class="chips">
+                <button class="chip" data-action="chip" data-text="预算 5000–6000">5000–6000</button>
+                <button class="chip" data-action="chip" data-text="拍照要好">拍照好</button>
+                <button class="chip" data-action="chip" data-text="能用 3 年">用 3 年</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg user">
+            <div class="bubble">5000–6000，拍照好，能用 3 年，不要曲面屏。</div>
+          </div>
+
+          <div class="msg agent">
+            <div class="bubble">
+              收到。先按硬条件筛掉 12 款：超预算 5、无货 3、非官方店 4。剩下 5 款进入打分。
+            </div>
+          </div>
+
+          <div class="msg agent" style="max-width:100%">
+            <div style="width:100%">
+              <div class="cand-card" id="chatCard">
+                <div class="cand-head">
+                  <b>3 款值得看</b>
+                  <span>按你当前权重排序</span>
+                </div>
+                <div id="chatCands"></div>
+                <div class="cand-foot">
+                  <button data-action="tab" data-tab="compare">看完整对比</button>
+                  <button class="primary" data-action="approve" data-id="A">就选影像旗舰 A</button>
+                </div>
+              </div>
+
+              <div class="explain" id="explainBox">
+                <button class="explain-head" data-action="why">
+                  <span>为什么是这三款？</span>
+                  <span class="caret">⌄</span>
+                </button>
+                <div class="explain-body" id="explainBody"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- compare -->
+        <div class="view" id="view-compare" role="tabpanel" aria-label="对比">
+          <div class="view-title"><b>3 款值得看</b><span id="cmpSortNote">按当前权重</span></div>
+
+          <div class="cmp-head">
+            <span>机型</span><span>价格</span><span>规格</span><span>口碑</span><span>综合</span>
+          </div>
+          <div id="cmpRows"></div>
+          <button class="cmp-more" id="cmpMore" data-action="toggle-all">显示另外 2 款</button>
+
+          <div class="cmp-detail" id="cmpDetail"></div>
+
+          <div class="cmp-cta">
+            <button data-action="approve" id="cmpCta">就选这款，去下单</button>
+          </div>
+          <p class="cmp-source">价格来自京东 / 天猫 / 品牌官网；到手价含国补与店铺券，以审批卡为准。</p>
+        </div>
+
+        <!-- watch -->
+        <div class="view" id="view-watch" role="tabpanel" aria-label="为你留意">
+          <div class="view-title"><b>为你留意</b><span>每天最多 1 条</span></div>
+          <p class="view-sub">只发三类：到价、补货、售后时限。每条都带"为什么现在说"。</p>
+
+          <div class="watch-card">
+            <div class="watch-top">
+              <div>
+                <div class="watch-kicker">到价提醒</div>
+                <div class="watch-title">影像旗舰 A · 12+256</div>
+              </div>
+              <span class="switch on" data-action="toggle" aria-label="到价提醒开关"></span>
+            </div>
+            <div class="watch-price num">¥5,399 <small>当前到手价</small></div>
+            <svg class="spark" viewBox="0 0 300 44" preserveAspectRatio="none" aria-hidden="true">
+              <polyline points="0,30 24,27 48,29 72,22 96,24 120,18 144,21 168,16 192,19 216,12 240,15 264,11 300,9"
+                fill="none" stroke="#0f5f4c" stroke-width="1.6" stroke-linecap="round"/>
+              <line x1="0" y1="9" x2="300" y2="9" stroke="#c9c5b9" stroke-width="1" stroke-dasharray="3 3"/>
+            </svg>
+            <p>目标价 ¥5,200，还差 ¥199。历史 90 天最低 ¥5,149，出现在上月大促。</p>
+            <div class="watch-foot"><span>到价才提醒，不打扰</span><button class="chip" data-action="target">改目标价</button></div>
+          </div>
+
+          <div class="watch-card">
+            <div class="watch-top">
+              <div>
+                <div class="watch-kicker">价保倒计时</div>
+                <div class="watch-title">30 天价保 · 剩 29 天</div>
+              </div>
+              <span class="switch on" data-action="toggle" aria-label="价保提醒开关"></span>
+            </div>
+            <p>降了就替你发起价保，提交前会给你审批卡。到期前 48 小时再提醒一次。</p>
+          </div>
+
+          <div class="watch-card">
+            <div class="watch-top">
+              <div>
+                <div class="watch-kicker">配件补货</div>
+                <div class="watch-title">65W 氮化镓充电器</div>
+              </div>
+              <span class="switch" data-action="toggle" aria-label="补货提醒开关"></span>
+            </div>
+            <p>兼容 A / B，官方店缺货。到货后告诉你，不自动下单。</p>
+          </div>
+        </div>
+
+        <!-- me -->
+        <div class="view" id="view-me" role="tabpanel" aria-label="我的">
+          <div class="view-title"><b>我的偏好</b><span>可改 · 可清零</span></div>
+          <p class="view-sub">这是后台真正在用的权重。拖右侧滑块，这里会同步。</p>
+
+          <div class="me-sec" id="prefBars"></div>
+
+          <div class="me-sec">
+            <h3>已连接</h3>
+            <div class="pillrow">
+              <span class="pill on">京东</span>
+              <span class="pill on">天猫</span>
+              <span class="pill on">品牌官网</span>
+              <span class="pill">拼多多</span>
+            </div>
+            <p class="me-note">只读商品与价格；下单单独授权。支付走一次性虚拟卡。</p>
+          </div>
+
+          <div class="me-sec">
+            <h3>排序原则</h3>
+            <div class="list">
+              <div class="list-item"><b>佣金不进公式</b><span>广告位单独标</span></div>
+              <div class="list-item"><b>同 SKU 同价</b><span>不做个性化定价</span></div>
+              <div class="list-item"><b>可追溯</b><span>每次推荐留权重</span></div>
+            </div>
+          </div>
+
+          <div class="me-sec">
+            <h3>数据</h3>
+            <div class="list">
+              <div class="list-item"><b>偏好记忆</b><span>可导出 / 删除</span></div>
+              <div class="list-item"><b>活动记录</b><span>最近 30 天</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- approval sheet -->
+      <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="确认订单">
+        <div class="sheet" id="sheet"></div>
+      </div>
+
+      <!-- composer -->
+      <div class="composer">
+        <div class="composer-inner">
+          <input id="msgInput" type="text" placeholder="继续说，或贴一个商品链接…" aria-label="给 Agent 发消息">
+          <button class="send" id="sendBtn" aria-label="发送">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <nav class="tabbar" aria-label="主导航">
+        <button class="tab active" data-tab="chat" aria-label="对话">
+          <svg viewBox="0 0 20 20"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v6a2.5 2.5 0 0 1-2.5 2.5H9l-4 3v-3H5.5A2.5 2.5 0 0 1 3 11.5z"/></svg>
+          对话
+        </button>
+        <button class="tab" data-tab="compare" aria-label="对比">
+          <svg viewBox="0 0 20 20"><path d="M3 4h5v12H3zM12 4h5v12h-5z"/><path d="M5.5 7h0M14.5 7h0"/></svg>
+          对比
+        </button>
+        <button class="tab" data-tab="watch" aria-label="为你留意">
+          <svg viewBox="0 0 20 20"><path d="M10 3a5 5 0 0 0-5 5v3l-1.5 2.5h13L15 11V8a5 5 0 0 0-5-5zM8.5 16a1.7 1.7 0 0 0 3 0"/></svg>
+          留意
+        </button>
+        <button class="tab" data-tab="me" aria-label="我的">
+          <svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 16.5c.8-2.8 3.2-4 6-4s5.2 1.2 6 4"/></svg>
+          我的
+        </button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ============ side panel ============ -->
+  <aside class="panel" aria-label="个性化权重后台">
+    <div class="panel-head">
+      <b>决策后台</b>
+      <span class="live"><i></i>实时</span>
+    </div>
+    <p class="panel-sub">拖动权重 → 归一化 → 重算综合分 → 重排。这里就是"个性化"发生的地方。</p>
+
+    <div class="need">
+      <b>本次委托</b>：手机 · 拍照优先 · 用 3 年<br>
+      预算 5000–6000 · 不要曲面屏
+      <div class="constraints">
+        <span>≤ ¥6,000</span><span>有货</span><span>官方/授权</span><span>7 天可退</span>
+      </div>
+    </div>
+
+    <div class="presets" id="presets" role="group" aria-label="权重预设">
+      <button class="preset on" data-preset="photo">拍照优先</button>
+      <button class="preset" data-preset="save">省钱优先</button>
+      <button class="preset" data-preset="service">售后优先</button>
+      <button class="preset" data-preset="balanced">均衡</button>
+    </div>
+
+    <p class="sec-label">六维权重（显示归一化后的占比）</p>
+    <div id="sliders"></div>
+
+    <div class="formula">
+      S = Σ wᵢ · sᵢ × (1 − 0.5 · risk)
+      <span>硬约束不参与打分</span>
+    </div>
+
+    <div class="rank-head">
+      <b>实时排序</b>
+      <span id="winnerNote">冠军：影像旗舰 A</span>
+    </div>
+    <ol class="rank-list" id="rankList"></ol>
+
+    <p class="panel-foot">示例数据只验证机制，不代表真实机型。权重上限：价格 ≤ 40%、品牌 ≤ 30%。</p>
+  </aside>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- data ---------------- */
+  const DIMS = ["price","spec","review","brand","fulfill","service"];
+  const LABELS = {price:"价格力", spec:"规格匹配", review:"口碑", brand:"品牌生态", fulfill:"履约", service:"售后"};
+
+  const PRODUCTS = [
+    {
+      id:"A", name:"影像旗舰 A", tag:"影像最强",
+      price:5999, coupon:100,
+      claim:"1 英寸主摄 · 6000mAh · 198g",
+      spec:9.5, rev:4.8, rc:15000, brand:8.6, fulfill:9.0, service:9.0, risk:0.04,
+      warranty:24, returnDays:7, pp:30, seller:"京东自营", ship:"11 月 23 日前送达",
+      reason:"影像 9.5，24 个月保修；比 B 贵 ¥500"
+    },
+    {
+      id:"B", name:"均衡旗舰 B", tag:"最稳",
+      price:5499, coupon:80,
+      claim:"三摄均衡 · 5500mAh · 192g",
+      spec:8.3, rev:4.6, rc:30000, brand:9.2, fulfill:9.5, service:9.2, risk:0.04,
+      warranty:24, returnDays:7, pp:30, seller:"天猫官旗", ship:"11 月 24 日前送达",
+      reason:"售后 9.2，几乎无短板；影像略弱"
+    },
+    {
+      id:"C", name:"小屏旗舰 C", tag:"最轻",
+      price:5799, coupon:100,
+      claim:"6.1 英寸 · 186g · 4800mAh",
+      spec:8.0, rev:4.8, rc:6000, brand:8.8, fulfill:8.0, service:8.0, risk:0.06,
+      warranty:12, returnDays:7, pp:15, seller:"品牌官网", ship:"11 月 26 日前送达",
+      reason:"186g 小屏，口碑 4.8；续航一般"
+    },
+    {
+      id:"D", name:"性价比旗舰 D", tag:"最便宜",
+      price:4499, coupon:50,
+      claim:"5000 万三摄 · 6500mAh · 205g",
+      spec:8.2, rev:4.3, rc:50000, brand:7.5, fulfill:8.5, service:7.0, risk:0.15,
+      warranty:12, returnDays:7, pp:7, seller:"拼多多百亿补贴", ship:"11 月 25 日前送达",
+      reason:"便宜 ¥1,500；售后 12 个月，风险偏高"
+    },
+    {
+      id:"E", name:"上代旗舰 E", tag:"清仓",
+      price:4999, coupon:100,
+      claim:"上代影像 · 5000mAh · 199g",
+      spec:7.6, rev:4.5, rc:80000, brand:8.0, fulfill:9.0, service:7.5, risk:0.12,
+      warranty:12, returnDays:7, pp:15, seller:"京东自营", ship:"11 月 23 日前送达",
+      reason:"上代旗舰，价格稳；规格落后一代"
+    }
+  ];
+
+  const PRESETS = {
+    photo:    {price:.10, spec:.50, review:.20, brand:.05, fulfill:.05, service:.10},
+    save:     {price:.45, spec:.20, review:.15, brand:.05, fulfill:.05, service:.10},
+    service:  {price:.10, spec:.20, review:.15, brand:.05, fulfill:.10, service:.40},
+    balanced: {price:.20, spec:.30, review:.20, brand:.10, fulfill:.10, service:.10}
+  };
+
+  const state = {
+    weights: Object.assign({}, PRESETS.photo),
+    preset: "photo",
+    tab: "chat",
+    selected: "A",
+    approved: false,
+    showAllCmp: false
+  };
+
+  const pmin = Math.min.apply(null, PRODUCTS.map(p => p.price));
+  const pmax = Math.max.apply(null, PRODUCTS.map(p => p.price));
+
+  /* ---------------- scoring ---------------- */
+  function dimScores(p){
+    const bayes = ((p.rc / (p.rc + 50)) * p.rev) + ((50 / (p.rc + 50)) * 4.5);
+    return {
+      price: 1 - 0.5 * ((p.price - pmin) / (pmax - pmin)),
+      spec: p.spec / 10,
+      review: bayes / 5,
+      brand: p.brand / 10,
+      fulfill: p.fulfill / 10,
+      service: p.service / 10
+    };
+  }
+
+  function scored(){
+    const w = state.weights;
+    const totalW = DIMS.reduce((s,k) => s + w[k], 0) || 1;
+    return PRODUCTS.map(p => {
+      const d = dimScores(p);
+      const contrib = {};
+      let raw = 0;
+      DIMS.forEach(k => {
+        const c = (w[k] / totalW) * d[k];
+        contrib[k] = c;
+        raw += c;
+      });
+      return {p, d, contrib, raw, score: raw * (1 - 0.5 * p.risk)};
+    }).sort((a,b) => b.score - a.score);
+  }
+
+  const money = n => "¥" + n.toLocaleString("zh-CN");
+  const pct = v => Math.round(v * 100) + "%";
+
+  /* ---------------- render: sliders ---------------- */
+  const slidersEl = document.getElementById("sliders");
+  DIMS.forEach(k => {
+    const row = document.createElement("div");
+    row.className = "slider-row";
+    row.innerHTML =
+      '<label for="w-' + k + '">' + LABELS[k] + '</label>' +
+      '<input id="w-' + k + '" type="range" min="0" max="60" step="5" value="' + Math.round(state.weights[k]*100) + '" data-dim="' + k + '">' +
+      '<output for="w-' + k + '" id="out-' + k + '">' + Math.round(state.weights[k]*100) + '%</output>';
+    slidersEl.appendChild(row);
+  });
+
+  slidersEl.addEventListener("input", e => {
+    const input = e.target.closest("input[type=range]");
+    if(!input) return;
+    state.weights[input.dataset.dim] = Number(input.value) / 100;
+    state.preset = "custom";
+    render();
+  });
+
+  /* ---------------- render: all ---------------- */
+  let lastWinner = null;
+  let winnerFlash = "";
+
+  function render(){
+    const rows = scored();
+    const winner = rows[0];
+    const totalW = DIMS.reduce((s,k) => s + state.weights[k], 0) || 1;
+
+    // sliders + normalized output
+    DIMS.forEach(k => {
+      const input = document.getElementById("w-" + k);
+      if(input && document.activeElement !== input){
+        input.value = Math.round(state.weights[k] * 100);
+      }
+      const out = document.getElementById("out-" + k);
+      if(out) out.textContent = pct(state.weights[k] / totalW);
+    });
+
+    // presets
+    document.querySelectorAll(".preset").forEach(btn => {
+      btn.classList.toggle("on", btn.dataset.preset === state.preset);
+    });
+
+    // winner note (flash briefly when the leader changes)
+    if(lastWinner && lastWinner !== winner.p.id){
+      winnerFlash = " · 冠军易主";
+      clearTimeout(render._flashTimer);
+      render._flashTimer = setTimeout(() => {
+        winnerFlash = "";
+        const note = document.getElementById("winnerNote");
+        if(note) note.textContent = "冠军：" + winner.p.name;
+      }, 2400);
+    }
+    lastWinner = winner.p.id;
+    document.getElementById("winnerNote").textContent = "冠军：" + winner.p.name + winnerFlash;
+
+    // rank list
+    const list = document.getElementById("rankList");
+    list.innerHTML = rows.map((r,i) => {
+      const sorted = DIMS.slice().sort((a,b) => r.contrib[b] - r.contrib[a]);
+      const top = sorted[0], second = sorted[1], weak = sorted[sorted.length-1];
+      const width = Math.max(6, (r.score / rows[0].score) * 100);
+      return '<li>' +
+        '<button class="rank-item" data-action="select" data-id="' + r.p.id + '">' +
+          '<span class="pos">' + (i+1) + '</span>' +
+          '<span>' +
+            '<span class="rname">' + r.p.name + (i===0 ? '<em>推荐</em>' : '') + '</span>' +
+            '<span class="rmeta">' + LABELS[top] + ' +' + r.contrib[top].toFixed(2) + ' · ' + LABELS[second] + ' +' + r.contrib[second].toFixed(2) + ' ｜ 短板 ' + LABELS[weak] + '</span>' +
+            '<span class="rank-bar"><i style="width:' + width.toFixed(1) + '%"></i></span>' +
+          '</span>' +
+          '<span class="score">' + r.score.toFixed(3) + '<span class="delta">' + money(r.p.price) + '</span></span>' +
+        '</button>' +
+      '</li>';
+    }).join("");
+
+    // chat candidates
+    const chat = document.getElementById("chatCands");
+    chat.innerHTML = rows.slice(0,3).map((r,i) =>
+      '<button class="cand-row" data-action="select" data-id="' + r.p.id + '">' +
+        '<span class="rk">' + (i+1) + '</span>' +
+        '<span class="cand-main">' +
+          '<span class="cand-name">' + r.p.name + (i===0 ? '<em>首选</em>' : '') + '</span>' +
+          '<span class="cand-sub">' + r.p.reason + '</span>' +
+        '</span>' +
+        '<span class="cand-right">' +
+          '<span class="cand-price num">' + money(r.p.price) + '</span>' +
+          '<span class="cand-score num">' + r.score.toFixed(3) + '</span>' +
+        '</span>' +
+      '</button>'
+    ).join("");
+
+    // primary chat CTA follows top candidate
+    const chatPrimary = document.querySelector('.cand-foot .primary');
+    if(chatPrimary){
+      chatPrimary.dataset.id = rows[0].p.id;
+      chatPrimary.textContent = "就选" + rows[0].p.name;
+    }
+
+    // explanation
+    const a = rows[0], b = rows[1];
+    const aTop = DIMS.slice().sort((x,y) => a.contrib[y] - a.contrib[x])[0];
+    const aWeak = DIMS.slice().sort((x,y) => a.contrib[x] - a.contrib[y])[0];
+    document.getElementById("explainBody").innerHTML =
+      '<b>' + a.p.name + '</b> 排第一：' + LABELS[aTop] + '贡献 ' + a.contrib[aTop].toFixed(2) +
+      '，综合分 ' + a.score.toFixed(3) + '；比第二名 ' + b.p.name + ' 高 ' + (a.score - b.score).toFixed(3) + '。' +
+      '它的短板是' + LABELS[aWeak] + '（' + a.d[aWeak].toFixed(2) + '，因为 ' + money(a.p.price) + '）。' +
+      '<div class="kv">当前权重：' + DIMS.map(k => LABELS[k] + ' ' + pct(state.weights[k] / totalW)).join(" · ") + '</div>' +
+      '<div class="kv">把"价格力"调到 45%，性价比旗舰 D 会反超——这不是模型换了，是你改的权重生效了。</div>';
+
+    // compare table — 3 finalists by default
+    const cmp = document.getElementById("cmpRows");
+    const visible = state.showAllCmp ? rows : rows.slice(0,3);
+    cmp.innerHTML = visible.map(r =>
+      '<button class="cmp-row' + (r.p.id === state.selected ? ' sel' : '') + '" data-action="select" data-id="' + r.p.id + '">' +
+        '<span class="cmp-name">' + r.p.name + '<small>' + r.p.claim + '</small></span>' +
+        '<span class="cmp-price num">' + money(r.p.price) + '</span>' +
+        '<span class="cmp-val num">' + r.p.spec.toFixed(1) + '</span>' +
+        '<span class="cmp-val num">' + r.p.rev.toFixed(1) + '</span>' +
+        '<span class="cmp-total num">' + r.score.toFixed(3) + '</span>' +
+      '</button>'
+    ).join("");
+    const more = document.getElementById("cmpMore");
+    if(more){
+      more.style.display = rows.length > 3 ? "block" : "none";
+      more.textContent = state.showAllCmp ? "收起，只看前 3 款" : "显示另外 " + (rows.length - 3) + " 款";
+    }
+
+    renderDetail(rows);
+
+    // pref bars (phone "我的")
+    const bars = document.getElementById("prefBars");
+    bars.innerHTML = DIMS.map(k => {
+      const share = state.weights[k] / totalW;
+      return '<div class="pref-row">' +
+        '<span>' + LABELS[k] + '</span>' +
+        '<span class="bar"><i style="width:' + (share*100).toFixed(1) + '%"></i></span>' +
+        '<span class="v">' + pct(share) + '</span>' +
+      '</div>';
+    }).join("") +
+    '<p class="me-note">这组权重只用于当前"拍照手机"委托；长期偏好会以 90 天半衰慢慢更新。</p>';
+
+    // keep approval content in sync with selection
+    if(state.approved){
+      // leave success screen as-is
+    } else if(document.getElementById("overlay").classList.contains("show")){
+      renderSheet();
+    }
+  }
+
+  function renderDetail(rows){
+    const r = rows.find(x => x.p.id === state.selected) || rows[0];
+    const el = document.getElementById("cmpDetail");
+    el.innerHTML =
+      '<h4>' + r.p.name + ' · ' + r.p.seller + '</h4>' +
+      '<div class="price">' + money(r.p.price) + ' · 保修 ' + r.p.warranty + ' 个月 · ' + r.p.returnDays + ' 天无理由 · ' + r.p.pp + ' 天价保 · 综合 <b style="color:var(--ink)">' + r.score.toFixed(3) + '</b></div>' +
+      DIMS.map(k =>
+        '<div class="dims">' +
+          '<span>' + LABELS[k] + '</span>' +
+          '<span class="bar"><i style="width:' + (r.d[k]*100).toFixed(1) + '%"></i></span>' +
+          '<span class="v">' + r.d[k].toFixed(2) + '</span>' +
+        '</div>'
+      ).join("");
+    const cta = document.getElementById("cmpCta");
+    cta.dataset.id = r.p.id;
+    cta.textContent = "就选" + r.p.name + "，去下单";
+  }
+
+  /* ---------------- tabs ---------------- */
+  function setTab(tab){
+    state.tab = tab;
+    document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + tab));
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+  }
+
+  /* ---------------- approval sheet ---------------- */
+  const overlay = document.getElementById("overlay");
+  const sheet = document.getElementById("sheet");
+
+  function renderSheet(){
+    if(state.approved){
+      const p = PRODUCTS.find(x => x.id === state.selected);
+      sheet.innerHTML =
+        '<div class="success">' +
+          '<div class="check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></div>' +
+          '<h3>已下单</h3>' +
+          '<p>' + p.name + ' · ' + p.seller + '<br>已用一次性虚拟卡支付，真实卡号未暴露。</p>' +
+          '<div class="order-no num">订单号 XS' + Date.now().toString().slice(-10) + '</div>' +
+          '<p>已创建：30 天价保监控 · 7 天退货提醒 · 保修到期提醒</p>' +
+          '<button data-action="done">去看售后提醒</button>' +
+        '</div>';
+      return;
+    }
+    const p = PRODUCTS.find(x => x.id === state.selected);
+    const total = p.price - 500 - p.coupon;
+    sheet.innerHTML =
+      '<div class="sheet-head"><b>确认订单</b><button class="x" data-action="close-approval" aria-label="关闭">×</button></div>' +
+      '<div class="order-item">' +
+        '<div class="thumb"></div>' +
+        '<div class="oi-main"><b>' + p.name + ' · 12+256</b><small>' + p.claim + '<br>' + p.seller + ' · 官方正品</small></div>' +
+      '</div>' +
+      '<div class="price-lines">' +
+        '<div class="pline"><span>商品金额</span><span class="num">' + money(p.price) + '</span></div>' +
+        '<div class="pline"><span>国补</span><span class="neg num">− ¥500</span></div>' +
+        '<div class="pline"><span>店铺优惠券</span><span class="neg num">− ' + money(p.coupon) + '</span></div>' +
+        '<div class="pline"><span>运费</span><span class="num">¥0</span></div>' +
+        '<div class="pline total"><span>到手价</span><span class="num">' + money(total) + '</span></div>' +
+      '</div>' +
+      '<div class="sheet-meta">' +
+        '<div><span>保修</span><b>' + p.warranty + ' 个月官方保修</b></div>' +
+        '<div><span>退货</span><b>' + p.returnDays + ' 天无理由 · 运费险</b></div>' +
+        '<div><span>价保</span><b>' + p.pp + ' 天</b></div>' +
+        '<div><span>预计送达</span><b>' + p.ship + '</b></div>' +
+      '</div>' +
+      '<div class="pay">' +
+        '<span class="bank"><span class="bankmark">招行</span><span>招商银行 ···· 1234</span></span>' +
+        '<span style="color:var(--accent);font-size:10px">一次性虚拟卡</span>' +
+      '</div>' +
+      '<div class="sheet-actions">' +
+        '<button class="deny" data-action="close-approval">Deny</button>' +
+        '<button class="allow" data-action="allow">Allow once</button>' +
+      '</div>' +
+      '<p class="approve-note">授权仅本次有效，绑定商户与金额；不会保存卡号。</p>';
+  }
+
+  function openApproval(id){
+    if(id) state.selected = id;
+    state.approved = false;
+    renderSheet();
+    overlay.classList.add("show");
+  }
+  function closeApproval(){
+    overlay.classList.remove("show");
+    state.approved = false;
+  }
+
+  /* ---------------- events ---------------- */
+  document.addEventListener("click", e => {
+    const preset = e.target.closest(".preset");
+    if(preset){
+      state.preset = preset.dataset.preset;
+      state.weights = Object.assign({}, PRESETS[state.preset]);
+      render();
+      return;
+    }
+
+    const tabBtn = e.target.closest(".tab");
+    if(tabBtn){ setTab(tabBtn.dataset.tab); return; }
+
+    const el = e.target.closest("[data-action]");
+    if(!el) return;
+    const action = el.dataset.action;
+
+    if(action === "tab") setTab(el.dataset.tab);
+
+    if(action === "select"){
+      state.selected = el.dataset.id;
+      const top3 = scored().slice(0,3).map(r => r.p.id);
+      if(top3.indexOf(state.selected) === -1) state.showAllCmp = true;
+      render();
+      if(state.tab === "chat") setTab("compare");
+    }
+
+    if(action === "toggle-all"){
+      state.showAllCmp = !state.showAllCmp;
+      render();
+    }
+
+    if(action === "why"){
+      document.getElementById("explainBox").classList.toggle("open");
+    }
+
+    if(action === "approve") openApproval(el.dataset.id);
+
+    if(action === "allow"){
+      state.approved = true;
+      renderSheet();
+    }
+
+    if(action === "done"){
+      closeApproval();
+      setTab("watch");
+    }
+
+    if(action === "close-approval") closeApproval();
+
+    if(action === "toggle") el.classList.toggle("on");
+
+    if(action === "target"){
+      el.textContent = "已记录 · 待确认";
+      el.style.color = "var(--accent)";
+      el.style.borderColor = "var(--accent)";
+    }
+
+    if(action === "chip"){
+      const text = el.dataset.text;
+      const chat = document.getElementById("view-chat");
+      const userMsg = document.createElement("div");
+      userMsg.className = "msg user";
+      userMsg.innerHTML = '<div class="bubble"></div>';
+      userMsg.querySelector(".bubble").textContent = text;
+      chat.appendChild(userMsg);
+      const reply = document.createElement("div");
+      reply.className = "msg agent";
+      reply.innerHTML = '<div class="bubble">已记下。下一轮筛选会带上这条，不会重新问一遍。</div>';
+      chat.appendChild(reply);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  });
+
+  document.getElementById("sendBtn").addEventListener("click", send);
+  document.getElementById("msgInput").addEventListener("keydown", e => {
+    if(e.key === "Enter") send();
+  });
+
+  function send(){
+    const input = document.getElementById("msgInput");
+    const text = input.value.trim();
+    if(!text) return;
+    const chat = document.getElementById("view-chat");
+    const userMsg = document.createElement("div");
+    userMsg.className = "msg user";
+    userMsg.innerHTML = '<div class="bubble"></div>';
+    userMsg.querySelector(".bubble").textContent = text;
+    chat.appendChild(userMsg);
+    input.value = "";
+
+    const reply = document.createElement("div");
+    reply.className = "msg agent";
+    reply.innerHTML = '<div class="bubble">收到。我把它加进需求，重新筛一遍；排序会按你右侧的权重实时更新。</div>';
+    setTimeout(() => {
+      chat.appendChild(reply);
+      chat.scrollTop = chat.scrollHeight;
+    }, 450);
+  }
+
+  overlay.addEventListener("click", e => {
+    if(e.target === overlay) closeApproval();
+  });
+  document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && overlay.classList.contains("show")) closeApproval();
+  });
+
+  /* ---------------- init ---------------- */
+  const q = new URLSearchParams(location.search);
+  if(q.get("preset") && PRESETS[q.get("preset")]){
+    state.preset = q.get("preset");
+    state.weights = Object.assign({}, PRESETS[state.preset]);
+  }
+  if(q.get("id") && PRODUCTS.some(p => p.id === q.get("id"))) state.selected = q.get("id");
+  render();
+  renderSheet();
+  if(q.get("tab")) setTab(q.get("tab"));
+  if(q.get("sheet")) openApproval(state.selected);
+})();
+</script>
+</body>
+</html>
